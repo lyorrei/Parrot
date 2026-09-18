@@ -51,3 +51,9 @@ Measure p50/p95 question-end to usable-response latency on the target Mac. Then 
 ## Local signing
 
 Ad-hoc builds have no Apple Team ID. The Makefile adds the library-validation exception only to the generated signing entitlements for `SIGN_IDENTITY=-`, allowing the bundled Sparkle framework to load. Certificate-signed builds retain library validation. Hardened runtime and the app sandbox remain enabled. CI runs the signed bundle without `DYLD_FRAMEWORK_PATH` before archiving it; checking its signature alone does not prove that it can launch.
+
+## Silence and microphone noise
+
+Local transcription now checks raw 16 kHz audio with FluidAudio's local Silero VAD before both preview and committed Whisper decodes. This distinguishes speech from energy-only noise without blacklisting Portuguese greetings or acknowledgements. The VAD model is downloaded/cache-loaded while preparing transcription; failure prevents the local model from being marked ready. A runtime VAD error surfaces a notice and skips unchecked decoding while the original audio continues recording. This does not identify the speaker or guarantee rejection of actual speech leaking from speakers into the microphone.
+
+Run `dist/PurpleParrot.app/Contents/MacOS/Parrot --speech-gate-test scripts/fixtures/portuguese-speech.wav` to test the real detector against synthetic silence, hiss, DC offset, clicks, Portuguese speech at normal/quiet volume, and state leakage after speech. The fixture was synthesized using the macOS Luciana voice; it contains no meeting audio.

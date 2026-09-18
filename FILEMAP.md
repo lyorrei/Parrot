@@ -83,3 +83,5 @@ tree. Line counts are rough — they flag which files are worth reading whole.
 | `docs/IMPROVEMENT-ROADMAP.md` | Roadmap + build notes (incl. the Xcode race) |
 | `docs/PERFORMANCE.md` | Performance findings |
 | `docs/superpowers/` | Design specs and plans |
+
+| `Services/LocalSpeechGate.swift` | 24 | Local neural voice detector; gates preview and committed audio before Whisper |

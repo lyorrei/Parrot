@@ -41,3 +41,6 @@ dist/
 # Sparkle's private signing key must never be committed; it lives in the
 # login Keychain, with a backup in the user's password manager.
 *private-key*.txt
+
+# Synthetic Portuguese voice fixture for acoustic gate regressions (not call audio)
+!scripts/fixtures/portuguese-speech.wav

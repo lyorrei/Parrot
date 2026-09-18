@@ -42,6 +42,10 @@ struct ParrotMain {
             CaptureTest.run(seconds: seconds)
             return
         }
+        if let i = args.firstIndex(of: "--speech-gate-test"), i + 1 < args.count {
+            SpeechGateTest.run(path: args[i + 1])
+            return
+        }
         if args.contains("--profile-test") {
             MainActor.assumeIsolated { ProfileTest.run() }
             return

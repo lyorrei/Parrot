@@ -1,0 +1,1 @@
+`portuguese-speech.wav` is synthetic speech generated with the macOS Luciana voice, 16 kHz mono PCM. Text: “Obrigado. E aí, tudo bem? Eu gostaria de confirmar o horário da reunião.” It contains no microphone capture or meeting recording. Used by `--speech-gate-test` to prevent silence filtering from suppressing real Portuguese greetings and quiet speech.

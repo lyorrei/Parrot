@@ -24,6 +24,7 @@ enum AudioSource: CaseIterable {
 @Observable
 final class TranscriptionEngine {
     private var whisperKit: WhisperKit?
+    private var speechGate: LocalSpeechGate?
     private var audioBuffers: [AudioSource: [Float]] = [.me: [], .them: []]
     private let bufferLock = OSAllocatedUnfairLock()
     private var transcriptionTask: Task<Void, Never>?
@@ -166,8 +167,10 @@ final class TranscriptionEngine {
                 download: false
             )
             let kit = try await Self.withTimeout(seconds: 300) { try await WhisperKit(config) }
+            let gate = try await Self.withTimeout(seconds: 120) { try await LocalSpeechGate() }
             guard loadGeneration == generation else { return }
             whisperKit = kit
+            speechGate = gate
             modelState = .ready
             isReady = true
         } catch {
@@ -604,7 +607,10 @@ final class TranscriptionEngine {
                             }
                             let energy = pending.isEmpty ? 0
                                 : pending.reduce(into: Float(0)) { $0 += abs($1) } / Float(pending.count)
-                            if energy > floor, let whisperKit = self.whisperKit {
+                            // Noise rejected by VAD must not be rescanned every poll.
+                            nextPreviewAt[source] = Date().addingTimeInterval(previewBase)
+                            if energy > floor, let whisperKit = self.whisperKit,
+                               await self.containsSpeech(pending) {
                                 // No interim callback here on purpose: each preview
                                 // re-decodes from the utterance's start, so streaming
                                 // its words made the bubble restart the same sentence
@@ -652,6 +658,15 @@ final class TranscriptionEngine {
                     // hallucination filter its energy signal.
                     let energy = chunk.reduce(into: Float(0)) { $0 += abs($1) } / Float(chunk.count)
                     guard energy > floor else { continue }
+                    guard await self.containsSpeech(chunk) else {
+                        await MainActor.run {
+                            if self.currentSpeaker == source {
+                                self.currentText = ""
+                                self.currentSpeaker = nil
+                            }
+                        }
+                        continue
+                    }
 
                     // Boost quiet-but-real chunks to a healthy level before
                     // every decode. `energy` above stays raw on purpose: the
@@ -970,6 +985,19 @@ final class TranscriptionEngine {
         currentText = ""
         currentSpeaker = nil
         isHearingSpeech = false
+    }
+
+    /// Fail visibly rather than decode unchecked noise if VAD becomes unavailable.
+    private func containsSpeech(_ samples: [Float]) async -> Bool {
+        do {
+            guard let speechGate else { throw AnalysisError.badResponse("Speech detector is not ready.") }
+            return try await speechGate.containsSpeech(samples)
+        } catch {
+            await MainActor.run {
+                self.cloudNotice = "Local speech detection failed. Reload the transcription model in Settings. Audio is still being recorded."
+            }
+            return false
+        }
     }
 
     /// The classic Whisper silence hallucinations — phrases the model invents
