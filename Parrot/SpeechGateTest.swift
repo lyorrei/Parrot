@@ -11,11 +11,11 @@ enum SpeechGateTest {
                 let file = try AVAudioFile(forReading: URL(fileURLWithPath: path))
                 guard file.processingFormat.sampleRate == 16000,
                       file.processingFormat.channelCount == 1,
-                      file.length > 16000,
+                      file.length >= 2400,
                       let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat,
                                                    frameCapacity: AVAudioFrameCount(file.length)) else {
                     throw NSError(domain: "SpeechGateTest", code: 1,
-                                  userInfo: [NSLocalizedDescriptionKey: "Expected a 16 kHz mono speech fixture longer than one second"])
+                                  userInfo: [NSLocalizedDescriptionKey: "Expected a 16 kHz mono speech fixture at least 150 ms long"])
                 }
                 try file.read(into: buffer)
                 let speech = Array(UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength)))
@@ -32,7 +32,7 @@ enum SpeechGateTest {
                     ("DC offset", [Float](repeating: 0.002, count: 192000), false),
                     ("brief click", click, false),
                     ("spoken thank-you and greeting", speech, true),
-                    ("quiet speech", speech.map { $0 * 0.08 }, true),
+                    ("quiet speech", speech.map { $0 * 0.01 }, true),
                     ("silence after speech, no recurrent-state leak", [Float](repeating: 0, count: 32000), false)
                 ]
                 for (name, samples, expected) in cases {

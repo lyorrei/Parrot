@@ -44,3 +44,5 @@ dist/
 
 # Synthetic Portuguese voice fixture for acoustic gate regressions (not call audio)
 !scripts/fixtures/portuguese-speech.wav
+!scripts/fixtures/portuguese-thanks.wav
+!scripts/fixtures/portuguese-greeting.wav
