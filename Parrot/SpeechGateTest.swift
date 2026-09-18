@@ -2,9 +2,10 @@ import Foundation
 import AVFoundation
 
 /// Real local VAD regression test. Uses synthetic non-speech and a supplied
-/// 16 kHz mono speech fixture; never opens the microphone or system capture.
+/// 16 kHz mono fixture; never opens the microphone or system capture.
+/// --expect-no-speech allows private noise recordings to be tested locally.
 enum SpeechGateTest {
-    static func run(path: String) {
+    static func run(path: String, expectSpeech: Bool = true) {
         Task {
             do {
                 let gate = try await LocalSpeechGate()
@@ -15,7 +16,7 @@ enum SpeechGateTest {
                       let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat,
                                                    frameCapacity: AVAudioFrameCount(file.length)) else {
                     throw NSError(domain: "SpeechGateTest", code: 1,
-                                  userInfo: [NSLocalizedDescriptionKey: "Expected a 16 kHz mono speech fixture at least 150 ms long"])
+                                  userInfo: [NSLocalizedDescriptionKey: "Expected a 16 kHz mono audio fixture at least 150 ms long"])
                 }
                 try file.read(into: buffer)
                 let speech = Array(UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength)))
@@ -31,8 +32,8 @@ enum SpeechGateTest {
                     ("steady microphone hiss", hiss, false),
                     ("DC offset", [Float](repeating: 0.002, count: 192000), false),
                     ("brief click", click, false),
-                    ("spoken thank-you and greeting", speech, true),
-                    ("quiet speech", speech.map { $0 * 0.01 }, true),
+                    ("supplied audio fixture", speech, expectSpeech),
+                    ("quiet audio fixture", speech.map { $0 * 0.01 }, expectSpeech),
                     ("silence after speech, no recurrent-state leak", [Float](repeating: 0, count: 32000), false)
                 ]
                 for (name, samples, expected) in cases {

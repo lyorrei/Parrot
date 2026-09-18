@@ -43,7 +43,7 @@ struct ParrotMain {
             return
         }
         if let i = args.firstIndex(of: "--speech-gate-test"), i + 1 < args.count {
-            SpeechGateTest.run(path: args[i + 1])
+            SpeechGateTest.run(path: args[i + 1], expectSpeech: !args.contains("--expect-no-speech"))
             return
         }
         if args.contains("--profile-test") {

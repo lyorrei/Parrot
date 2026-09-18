@@ -8,9 +8,12 @@ final class LocalSpeechGate: Sendable {
     private let vad: VadManager
 
     init() async throws {
-        // Conservative admission: reject non-speech without requiring the
-        // diarization-oriented default of 0.85 for quiet conversational speech.
-        vad = try await VadManager(config: VadConfig(defaultThreshold: 0.5))
+        // At 0.5, brief webcam noise peaks (0.53–0.58 in a real silent-mic
+        // recording) admitted whole
+        // chunks that Whisper confidently decoded as "Obrigado". Quiet speech
+        // still needs headroom: the quiet short-greeting fixture peaks at 0.81,
+        // so the model's default 0.85 would drop it. Keep both regressions.
+        vad = try await VadManager(config: VadConfig(defaultThreshold: 0.75))
     }
 
     func containsSpeech(_ samples: [Float]) async throws -> Bool {
