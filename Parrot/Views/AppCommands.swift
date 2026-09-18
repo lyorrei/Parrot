@@ -25,7 +25,7 @@ extension Notification.Name {
 /// and the detail toolbar. Exports write to Downloads and reveal in Finder.
 @MainActor
 enum MeetingActions {
-    nonisolated static let repoURL = "https://github.com/turantekin/Parrot"
+    nonisolated static let repoURL = "https://github.com/lyorrei/Parrot"
 
     static func exportTXT(_ meeting: Meeting) {
         write(ExportService.exportToTXT(meeting: meeting), for: meeting, ext: "txt")

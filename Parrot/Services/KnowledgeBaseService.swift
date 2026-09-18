@@ -19,9 +19,12 @@ final class KnowledgeBaseService {
     var isEmpty: Bool { documents.isEmpty }
 
     private let persistent: Bool
+    private let embedding: @Sendable (String, NLLanguage) -> [Double]?
 
-    init(persistent: Bool = true) {
+    init(persistent: Bool = true,
+         embedding: @escaping @Sendable (String, NLLanguage) -> [Double]? = { KnowledgeBaseService.embed($0, language: $1) }) {
         self.persistent = persistent
+        self.embedding = embedding
         if persistent { load() }
     }
 
@@ -51,9 +54,10 @@ final class KnowledgeBaseService {
         let pieces = Self.chunkText(text)
         let language = NLLanguageRecognizer.dominantLanguage(for: text) ?? .english
 
+        let embed = embedding
         let embedded: [KBChunk] = await Task.detached(priority: .userInitiated) {
             pieces.compactMap { piece in
-                guard let vector = Self.embed(piece, language: language) else { return nil }
+                guard let vector = embed(piece, language) else { return nil }
                 return KBChunk(
                     documentName: name,
                     languageRaw: language.rawValue,
@@ -68,12 +72,15 @@ final class KnowledgeBaseService {
             return
         }
 
-        // Re-adding a document replaces its previous version, keeping its note.
-        let existingNote = documents.first { $0.name == name }?.note ?? ""
+        // Keep identity and profile assignments when refreshing the same source.
         chunks.removeAll { $0.documentName == name }
-        documents.removeAll { $0.name == name }
         chunks.append(contentsOf: embedded)
-        documents.append(KBDocument(name: name, note: existingNote, chunkCount: embedded.count, addedAt: .now))
+        if let index = documents.firstIndex(where: { $0.name == name }) {
+            documents[index].chunkCount = embedded.count
+            documents[index].addedAt = .now
+        } else {
+            documents.append(KBDocument(name: name, chunkCount: embedded.count, addedAt: .now))
+        }
         save()
     }
 
@@ -128,13 +135,14 @@ final class KnowledgeBaseService {
             uniquingKeysWith: { first, _ in first }
         )
 
+        let embed = embedding
         let best: [KBChunk] = await Task.detached(priority: .userInitiated) {
             // Documents may be in different languages; embed the query once per
             // language so vectors are always compared within the same space.
             let languages = Set(snapshot.map(\.languageRaw))
             var queryVectors: [String: [Double]] = [:]
             for raw in languages {
-                queryVectors[raw] = Self.embed(query, language: NLLanguage(rawValue: raw))
+                queryVectors[raw] = embed(query, NLLanguage(rawValue: raw))
             }
 
             let scored: [(KBChunk, Double)] = snapshot.compactMap { chunk in
@@ -219,7 +227,7 @@ final class KnowledgeBaseService {
     private static var storeURL: URL {
         let dir = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Parrot/KnowledgeBase", isDirectory: true)
+            .appendingPathComponent("PurpleParrot/KnowledgeBase", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("index.json")
     }

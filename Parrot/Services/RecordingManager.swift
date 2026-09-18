@@ -218,11 +218,13 @@ final class RecordingManager {
         // Wire transcription output to storage and the live copilot
         transcriptionEngine.onSegment = { [weak self] result in
             Task { @MainActor in
-                self?.addSegment(result)
-                self?.callAnalysisEngine.ingest(
+                guard let self, let change = self.addSegment(result) else { return }
+                self.callAnalysisEngine.retractSegments(ids: change.removedIDs)
+                self.callAnalysisEngine.ingest(
                     text: result.text,
                     at: result.endTime,
-                    source: result.source
+                    source: result.source,
+                    id: change.id
                 )
             }
         }
@@ -419,7 +421,8 @@ final class RecordingManager {
 
     // MARK: - Segment Storage
 
-    private func addSegment(_ result: TranscriptionEngine.TranscriptionResult) {
+    @discardableResult
+    private func addSegment(_ result: TranscriptionEngine.TranscriptionResult) -> (id: UUID, removedIDs: Set<UUID>)? {
         // Use the live meeting object directly. The previous code looked the
         // meeting up via model(for: meetingID) where meetingID was captured before
         // the context was saved — i.e. a TEMPORARY identifier that goes stale after
@@ -427,7 +430,7 @@ final class RecordingManager {
         // to segment.meeting tripped a SwiftData assertion (crash). currentMeeting
         // is the same registered instance in the same context, set before any
         // segment can arrive.
-        guard let modelContext, let meeting = currentMeeting else { return }
+        guard let modelContext, let meeting = currentMeeting else { return nil }
 
         // Speaker bleed: without headphones the mic hears the speakers, the
         // AEC attenuates but can't always erase it, and the residual decodes —
@@ -442,11 +445,13 @@ final class RecordingManager {
         if result.source == .me,
            neighbors.contains(where: { $0.speakerLabel == AudioSource.them.label
                && Self.isEchoDuplicate($0.text, result.text) }) {
-            return
+            return nil
         }
+        var removedIDs = Set<UUID>()
         if result.source == .them {
             for stored in neighbors where stored.speakerLabel == AudioSource.me.label
                 && Self.isEchoDuplicate(stored.text, result.text) {
+                removedIDs.insert(stored.id)
                 modelContext.delete(stored)
             }
         }
@@ -462,6 +467,7 @@ final class RecordingManager {
         modelContext.insert(segment)
         segment.meeting = meeting
         try? modelContext.save()
+        return (segment.id, removedIDs)
     }
 
     /// Near-verbatim match for the echo-dedup above: Whisper decodes the bleed

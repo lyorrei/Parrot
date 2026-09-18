@@ -1,0 +1,30 @@
+name: Purple Parrot checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcode-select -p
+          swift --version
+      - name: Scheduler and knowledge-base regressions
+        run: scripts/test-fork.sh
+      - name: Full application logic harness
+        env:
+          DYLD_FRAMEWORK_PATH: ${{ github.workspace }}/.build/release
+        run: make test
+      - name: Assemble local prototype
+        run: |
+          make app SIGN_IDENTITY=-
+          ditto -c -k --sequesterRsrc --keepParent dist/PurpleParrot.app dist/PurpleParrot.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PurpleParrot-macOS
+          path: dist/PurpleParrot.zip

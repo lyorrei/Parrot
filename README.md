@@ -1,3 +1,9 @@
+# Purple Parrot — protótipo
+
+Fork com respostas curtas em português e inferência local. Consulte [configuração, mudanças e limitações](docs/PURPLE-FORK.md).
+
+---
+
 # 🦜 Parrot
 
 **A live AI copilot for your calls that runs on your Mac — and never sends your calls anywhere.**

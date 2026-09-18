@@ -1,6 +1,7 @@
 import Foundation
 
 enum ProfilePresets {
+    static let purpleProfileID = UUID(uuidString: "00000000-0000-0000-0000-0000000000E1")!
     static let defaultProfileID = UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!
     private static let salesID    = UUID(uuidString: "00000000-0000-0000-0000-0000000000C1")!
     private static let coachingID = UUID(uuidString: "00000000-0000-0000-0000-0000000000C2")!
@@ -50,6 +51,26 @@ enum ProfilePresets {
 
     static func all() -> [CallProfile] {
         [
+            CallProfile(id: purpleProfileID, name: "Purple — resposta rápida", iconSystemName: "bolt.bubble",
+                summary: "Uma resposta curta, em português, com contexto da conta.",
+                isBuiltIn: true, sortOrder: -1,
+                persona: """
+                Você ajuda o usuário durante uma reunião da Purple Metrics. Priorize a última pergunta
+                dirigida ao usuário. Produza no máximo UM cartão: uma frase curta que ele possa dizer
+                agora, em português brasileiro. Preencha reply com essa frase, não com instruções ao usuário.
+                Se ninguém precisa de uma resposta, retorne insights vazios. Não gere avaliação emocional
+                nem coaching genérico; deixe coach e read vazios. Não confunda MTA com MMM.
+                Use o brief e os documentos da conta para fatos sobre pessoas, cargos, preços e compromissos.
+                Hipóteses e atribuições incertas continuam incertas. Nunca invente quem disse uma frase.
+                Sem evidência suficiente, sugira uma pergunta de esclarecimento em vez de afirmar um fato.
+                Inclua em detail uma justificativa curta com a evidência disponível. Preserve datas e fontes.
+                """,
+                tone: "", counterpart: "a outra pessoa", allowGeneralKnowledge: false,
+                presetVersion: presetVersion,
+                kinds: [
+                    kind("quick_answer", "Diga agora", "4F6FB0", "bolt.bubble", "Uma pergunta ou objeção atual pede resposta. Ofereça uma única frase utilizável agora, apoiada no brief ou nos documentos."),
+                    kind("clarification", "Confirme primeiro", "2F7E96", "questionmark.circle", "Falta evidência para responder com segurança. Sugira uma pergunta curta para esclarecer a dúvida.")
+                ], gauges: []),
             makeDefault(persona: defaultPersona, tone: "", allowGeneralKnowledge: true),
             CallProfile(id: salesID, name: "Sales discovery", iconSystemName: "dollarsign.circle",
                 summary: "Discovery & objection handling for sales calls.",

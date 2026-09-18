@@ -109,7 +109,7 @@ final class CallAnalysisEngine {
 
     let provider: AnalysisProvider
     private var callBrief = ""
-    private var segments: [(time: TimeInterval, text: String, source: AudioSource)] = []
+    private var segments: [(id: UUID, time: TimeInterval, text: String, source: AudioSource)] = []
     private var meCharacters = 0
     private var themCharacters = 0
     private var lastAnalyzedCount = 0
@@ -118,6 +118,8 @@ final class CallAnalysisEngine {
     private var lastAnalysisEnd = Date.distantPast
     private var rerunRequested = false
     private var oldestPendingSince: Date?
+    private var retryCount = 0
+    private let maximumRetries = 2
 
     /// Timing now comes from the user's pace choice (Settings → Copilot).
     /// Roles unchanged: idle = wait after the latest mid-flow segment,
@@ -138,6 +140,9 @@ final class CallAnalysisEngine {
     }
 
     func start(profile: CallProfile?, brief: String = "") {
+        stop()
+        lastAnalysisEnd = .distantPast
+        retryCount = 0
         guard isEnabled else {
             status = .off
             return
@@ -179,6 +184,9 @@ final class CallAnalysisEngine {
         if paused {
             debounceTask?.cancel()
             debounceTask = nil
+            analysisTask?.cancel()
+            analysisTask = nil
+            rerunRequested = false
             oldestPendingSince = nil  // paused time must not count as staleness
             status = .paused
         } else {
@@ -198,14 +206,15 @@ final class CallAnalysisEngine {
     }
 
     /// Feed every finalized transcript segment here. The engine decides when to analyze.
-    func ingest(text: String, at time: TimeInterval, source: AudioSource) {
+    func ingest(text: String, at time: TimeInterval, source: AudioSource, id: UUID = UUID()) {
         guard isActive, isEnabled else { return }
         guard provider.isConfigured else {
             status = .needsAPIKey
             return
         }
 
-        segments.append((time, text, source))
+        segments.append((id, time, text, source))
+        retryCount = 0
         switch source {
         case .me: meCharacters += text.count
         case .them: themCharacters += text.count
@@ -236,6 +245,22 @@ final class CallAnalysisEngine {
         }
     }
 
+    /// A later system segment can establish that a previous mic segment was echo.
+    /// Invalidate any request that still contains that retracted speech.
+    func retractSegments(ids: Set<UUID>) {
+        guard !ids.isEmpty else { return }
+        analysisTask?.cancel()
+        analysisTask = nil
+        debounceTask?.cancel()
+        debounceTask = nil
+        rerunRequested = false
+        segments.removeAll { ids.contains($0.id) }
+        meCharacters = segments.filter { $0.source == .me }.reduce(0) { $0 + $1.text.count }
+        themCharacters = segments.filter { $0.source == .them }.reduce(0) { $0 + $1.text.count }
+        lastAnalyzedCount = 0
+        oldestPendingSince = nil
+    }
+
     // MARK: - Analysis
 
     private func triggerAnalysis() {
@@ -264,7 +289,7 @@ final class CallAnalysisEngine {
         // followed by a new start(), so isActive alone can't distinguish "this
         // session" from "the next one" — inserting stale insights or nil-ing the
         // new session's task handle would corrupt the new call.
-        guard isActive, !Task.isCancelled else {
+        guard isActive, !isPaused, !Task.isCancelled else {
             if !Task.isCancelled { analysisTask = nil }
             return
         }
@@ -284,7 +309,7 @@ final class CallAnalysisEngine {
         // until new speech arrives).
         let previousAnalyzedCount = lastAnalyzedCount
         let previousPendingSince = oldestPendingSince
-        lastAnalyzedCount = segments.count
+        let analyzedCount = segments.count
         oldestPendingSince = nil
 
         // Time-based context window (Settings → Copilot). The old fixed
@@ -318,12 +343,16 @@ final class CallAnalysisEngine {
             gauges: profile?.gauges ?? []
         )
 
+        guard isActive, !isPaused, !Task.isCancelled else { return }
+        var shouldRetry = false
         do {
             let result = try await provider.analyze(request)
-            guard isActive, !Task.isCancelled else {
+            guard isActive, !isPaused, !Task.isCancelled else {
                 if !Task.isCancelled { analysisTask = nil }
                 return
             }
+            lastAnalyzedCount = analyzedCount
+            retryCount = 0
             // Merge model sentiment; overlay the computed talk-balance gauge if present.
             var merged = result.sentiment
             if let pct = userTalkPercent, (profile?.gauges.contains { $0.key == "my_dominance" } ?? false) {
@@ -382,6 +411,7 @@ final class CallAnalysisEngine {
                 if case .missingAPIKey = error {
                     status = .needsAPIKey
                 } else {
+                    shouldRetry = true
                     status = .error(error.localizedDescription)
                 }
             }
@@ -389,6 +419,7 @@ final class CallAnalysisEngine {
             if isActive, !Task.isCancelled {
                 lastAnalyzedCount = previousAnalyzedCount
                 oldestPendingSince = previousPendingSince
+                shouldRetry = true
                 status = .error(error.localizedDescription)
             }
         }
@@ -402,6 +433,15 @@ final class CallAnalysisEngine {
         if rerunRequested {
             rerunRequested = false
             triggerAnalysis()
+        } else if shouldRetry, retryCount < maximumRetries, isActive, !isPaused {
+            retryCount += 1
+            let delay = minimumInterval * Double(retryCount)
+            debounceTask?.cancel()
+            debounceTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
+                self?.triggerAnalysis()
+            }
         }
     }
 
@@ -527,7 +567,7 @@ final class CallAnalysisEngine {
     /// Cheap detector that fast-tracks analysis when someone asks something.
     static func looksLikeQuestion(_ text: String) -> Bool {
         if text.contains("?") { return true }
-        let lowered = text.lowercased()
+        let lowered = text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
         let openers = [
             "how much", "how many", "how do", "how does", "how long", "how soon",
             "can you", "could you", "can we", "could we", "can i", "could i",
@@ -536,6 +576,11 @@ final class CallAnalysisEngine {
             "is there", "are there", "is it", "does it", "will it",
             "when can", "when do", "when will", "where do", "who is", "who's",
             "why ", "tell me about",
+            "quanto custa", "quanto tempo", "quantos ", "quantas ",
+            "como funciona", "como voces", "como podemos", "como eu", "como fazer",
+            "qual e", "quais ", "o que ", "por que ",
+            "voces podem", "voce pode", "pode explicar", "poderia explicar",
+            "quando ", "quem ", "onde ", "me explica", "me explique",
         ]
         return openers.contains { lowered.contains($0) }
     }

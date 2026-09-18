@@ -580,7 +580,7 @@ final class ClaudeAnalysisProvider: AnalysisProvider {
 /// Stores API keys in the user's keychain. One service, one account per
 /// provider — "claude-api-key" (default), "groq-api-key", "deepgram-api-key".
 enum APIKeyStore {
-    private static let service = "com.uygar.parrot"
+    private static let service = "com.purplemetrics.parrot"
 
     /// Returns false if the keychain rejected the write — the UI must say so,
     /// or the user believes the key is saved and every call fails "missing key".

@@ -19,6 +19,9 @@
 # can't compile.
 set -euo pipefail
 
+echo "Fork distribution requires its own signing identity and update feed. Use make app for local builds." >&2
+exit 1
+
 VERSION="${1:?usage: scripts/release.sh <version, e.g. 0.9.0>}"
 IDENTITY="Developer ID Application: Uygar Turantekin (5D8KQ6NJGF)"
 PROFILE="parrot-notary"

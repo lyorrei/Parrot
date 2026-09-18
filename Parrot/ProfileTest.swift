@@ -78,8 +78,8 @@ enum ProfileTest {
 
     static func testPresets() {
         let all = ProfilePresets.all()
-        check("six presets", all.count == 6)
-        check("default first by sortOrder", all.sorted { $0.sortOrder < $1.sortOrder }.first?.id == ProfilePresets.defaultProfileID)
+        check("seven presets", all.count == 7)
+        check("purple first by sortOrder", all.sorted { $0.sortOrder < $1.sortOrder }.first?.id == ProfilePresets.purpleProfileID)
         let coaching = all.first { $0.name == "1:1 coaching" }
         check("coaching has reflection kind", coaching?.kinds.contains { $0.key == "reflection" } == true)
         check("coaching has NO blocker kind", coaching?.kinds.contains { $0.key == "blocker" } == false)
@@ -128,12 +128,12 @@ enum ProfileTest {
         }
         store.seedAndMigrateIfNeeded(context: ctx, knowledgeBase: kb)
         let profiles = (try? ctx.fetch(FetchDescriptor<CallProfile>())) ?? []
-        check("seeded six profiles", profiles.count == 6)
+        check("seeded seven profiles", profiles.count == 7)
         let def = profiles.first { $0.id == ProfilePresets.defaultProfileID }
         check("default absorbed instructions as tone", def?.tone == "be concise")
         // Idempotent: second run doesn't duplicate.
         store.seedAndMigrateIfNeeded(context: ctx, knowledgeBase: kb)
-        check("seeding idempotent", ((try? ctx.fetch(FetchDescriptor<CallProfile>()))?.count ?? 0) == 6)
+        check("seeding idempotent", ((try? ctx.fetch(FetchDescriptor<CallProfile>()))?.count ?? 0) == 7)
     }
 
     @MainActor

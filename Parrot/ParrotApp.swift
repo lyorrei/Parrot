@@ -52,6 +52,18 @@ struct ParrotMain {
             AnalyzeTest.run(provider: provider, model: model)
             return
         }
+        // Defaults belong to the fork's isolated bundle domain. Explicit settings
+        // continue to win; no API keys or upstream preferences are migrated.
+        UserDefaults.standard.register(defaults: [
+            "copilotProvider": "ollama",
+            "reportsProvider": "ollama",
+            "copilotEnabled": true,
+            "transcriptionBackend": "local",
+            "polishAfterCall": false,
+            "transcriptionLanguage": "pt",
+            "copilotWindow": "recent",
+            "copilotPace": "fast",
+        ])
         ParrotApp.main()
     }
 }

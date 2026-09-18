@@ -8,7 +8,7 @@
 
 CONFIG      ?= release
 DIST        ?= dist
-APP         := $(DIST)/Parrot.app
+APP         := $(DIST)/PurpleParrot.app
 PLIST       := $(APP)/Contents/Info.plist
 BINDIR      := .build/$(CONFIG)
 VERSION     ?= 0.0.0-dev
@@ -22,7 +22,7 @@ BUILD_NUM   := $(shell date +%Y%m%d%H%M)
 # granted again. Compare:
 #
 #   ad-hoc  designated => cdhash H"4666a893..."
-#   signed  designated => identifier "com.uygar.parrot" and anchor apple generic
+#   signed  designated => identifier "com.purplemetrics.parrot" and anchor apple generic
 #                         and certificate leaf[subject.CN] = "Apple Development: ..."
 #
 # So: use whatever valid codesigning identity you already have, automatically.
@@ -111,8 +111,8 @@ bundle: build
 	@printf 'APPL????' > $(APP)/Contents/PkgInfo
 	@cp Parrot/Info.plist $(PLIST)
 	@plutil -replace CFBundleExecutable         -string Parrot           $(PLIST)
-	@plutil -replace CFBundleIdentifier         -string com.uygar.parrot $(PLIST)
-	@plutil -replace CFBundleName               -string Parrot           $(PLIST)
+	@plutil -replace CFBundleIdentifier         -string com.purplemetrics.parrot $(PLIST)
+	@plutil -replace CFBundleName               -string PurpleParrot     $(PLIST)
 	@plutil -replace CFBundleDevelopmentRegion  -string en               $(PLIST)
 	@plutil -replace CFBundleShortVersionString -string "$(VERSION)"     $(PLIST)
 	@plutil -replace CFBundleVersion            -string "$(BUILD_NUM)"   $(PLIST)
@@ -221,8 +221,8 @@ signing-help:
 	@echo 'Already-granted permissions are bound to the old ad-hoc build, so clear'
 	@echo 'them once after switching, then quit and relaunch Parrot:'
 	@echo
-	@echo '    tccutil reset ScreenCapture com.uygar.parrot'
-	@echo '    tccutil reset Microphone com.uygar.parrot'
+	@echo '    tccutil reset ScreenCapture com.purplemetrics.parrot'
+	@echo '    tccutil reset Microphone com.purplemetrics.parrot'
 	@echo
 
 .PHONY: run
@@ -231,9 +231,9 @@ run: bundle
 
 .PHONY: install
 install: bundle
-	rm -rf /Applications/Parrot.app
+	rm -rf /Applications/PurpleParrot.app
 	cp -R $(APP) /Applications/
-	@echo "Installed /Applications/Parrot.app — start it from Spotlight or 'open -a Parrot'"
+	@echo "Installed /Applications/PurpleParrot.app — start it from Spotlight or 'open -a PurpleParrot'"
 
 # ParrotApp.swift exposes CLI harness flags; --profile-test is the ~60-check
 # logic harness that runs headless.

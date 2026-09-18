@@ -27,7 +27,7 @@ final class SystemAudioTap {
     private let targetFormat: AVAudioFormat
     /// IO callbacks and the format-change listener share this queue, so the
     /// converter/sourceFormat pair is never read while being rebuilt.
-    private let queue = DispatchQueue(label: "com.uygar.parrot.audio.tap", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "com.purplemetrics.parrot.audio.tap", qos: .userInteractive)
     private var formatListener: AudioObjectPropertyListenerBlock?
 
     init(targetFormat: AVAudioFormat) {

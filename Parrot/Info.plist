@@ -28,17 +28,9 @@
 	<string>Parrot records your microphone so it can transcribe your side of the meeting on-device.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Parrot captures system audio from your meetings via screen recording. Only audio is used — never screen content.</string>
-	<key>SUAutomaticallyUpdate</key>
-	<true/>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
-	<key>SUEnableInstallerLauncherService</key>
-	<true/>
-	<key>SUFeedURL</key>
-	<string>https://turantekin.github.io/Parrot/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>5+CifCVb0y0I1NthwWggSCNDRclBd19qGUx5tC2uGU4=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
+	<key>CFBundleDisplayName</key>
+	<string>Purple Parrot</string>
 </dict>
 </plist>
