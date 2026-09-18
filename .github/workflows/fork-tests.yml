@@ -1,4 +1,4 @@
-name: Purple Parrot checks
+name: Parrot checks
 on:
   push:
   pull_request:
@@ -24,15 +24,15 @@ jobs:
         run: |
           make app SIGN_IDENTITY=-
       - name: Run the signed bundle without build-directory libraries
-        run: env -u DYLD_FRAMEWORK_PATH dist/PurpleParrot.app/Contents/MacOS/Parrot --profile-test
+        run: env -u DYLD_FRAMEWORK_PATH dist/Parrot.app/Contents/MacOS/Parrot --profile-test
       - name: Real speech detector regressions
         run: |
-          for fixture in "$PWD"/dist/PurpleParrot.app/Contents/Resources/portuguese-*.wav; do
-            env -u DYLD_FRAMEWORK_PATH dist/PurpleParrot.app/Contents/MacOS/Parrot --speech-gate-test "$fixture"
+          for fixture in "$PWD"/dist/Parrot.app/Contents/Resources/portuguese-*.wav; do
+            env -u DYLD_FRAMEWORK_PATH dist/Parrot.app/Contents/MacOS/Parrot --speech-gate-test "$fixture"
           done
       - name: Archive verified bundle
-        run: ditto -c -k --sequesterRsrc --keepParent dist/PurpleParrot.app dist/PurpleParrot.zip
+        run: ditto -c -k --sequesterRsrc --keepParent dist/Parrot.app dist/Parrot.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: PurpleParrot-macOS
-          path: dist/PurpleParrot.zip
+          name: Parrot-macOS
+          path: dist/Parrot.zip

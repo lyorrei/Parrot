@@ -8,7 +8,7 @@
 
 CONFIG      ?= release
 DIST        ?= dist
-APP         := $(DIST)/PurpleParrot.app
+APP         := $(DIST)/Parrot.app
 PLIST       := $(APP)/Contents/Info.plist
 SIGN_ENTITLEMENTS := $(DIST)/signing.entitlements
 BINDIR      := .build/$(CONFIG)
@@ -113,7 +113,7 @@ bundle: build
 	@cp Parrot/Info.plist $(PLIST)
 	@plutil -replace CFBundleExecutable         -string Parrot           $(PLIST)
 	@plutil -replace CFBundleIdentifier         -string com.purplemetrics.parrot $(PLIST)
-	@plutil -replace CFBundleName               -string PurpleParrot     $(PLIST)
+	@plutil -replace CFBundleName               -string Parrot     $(PLIST)
 	@plutil -replace CFBundleDevelopmentRegion  -string en               $(PLIST)
 	@plutil -replace CFBundleShortVersionString -string "$(VERSION)"     $(PLIST)
 	@plutil -replace CFBundleVersion            -string "$(BUILD_NUM)"   $(PLIST)
@@ -241,9 +241,9 @@ run: bundle
 
 .PHONY: install
 install: bundle
-	rm -rf /Applications/PurpleParrot.app
+	rm -rf /Applications/Parrot.app
 	cp -R $(APP) /Applications/
-	@echo "Installed /Applications/PurpleParrot.app — start it from Spotlight or 'open -a PurpleParrot'"
+	@echo "Installed /Applications/Parrot.app — start it from Spotlight or 'open -a Parrot'"
 
 # ParrotApp.swift exposes CLI harness flags; --profile-test is the ~60-check
 # logic harness that runs headless.

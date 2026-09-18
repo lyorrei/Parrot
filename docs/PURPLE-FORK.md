@@ -1,4 +1,4 @@
-# Purple Parrot — first prototype
+# Parrot — first prototype
 
 This fork adds a Portuguese meeting-response profile to Parrot. It is an early prototype, not a benchmarked low-latency release. The original GPL-3.0 license and attribution remain in place.
 
@@ -20,10 +20,10 @@ Install full Xcode and select its command-line tools; the standalone Command Lin
 
 ```sh
 make app
-open dist/PurpleParrot.app
+open dist/Parrot.app
 ```
 
-The binary inside the bundle remains named Parrot. The app bundle is PurpleParrot.app with identifier com.purplemetrics.parrot. `project.yml` is the Xcode project source of truth; run `make xcode` if you need to regenerate the checked-in upstream project. The inherited release script is disabled until fork signing and update distribution are configured.
+The binary inside the bundle remains named Parrot. The app bundle is Parrot.app with identifier com.purplemetrics.parrot. `project.yml` is the Xcode project source of truth; run `make xcode` if you need to regenerate the checked-in upstream project. The inherited release script is disabled until fork signing and update distribution are configured.
 
 ## Try it
 
@@ -56,4 +56,4 @@ Ad-hoc builds have no Apple Team ID. The Makefile adds the library-validation ex
 
 Local transcription now checks raw 16 kHz audio with FluidAudio's local Silero VAD before both preview and committed Whisper decodes. This distinguishes speech from energy-only noise without blacklisting Portuguese greetings or acknowledgements. The VAD model is downloaded/cache-loaded while preparing transcription; failure prevents the local model from being marked ready. A runtime VAD error surfaces a notice and skips unchecked decoding while the original audio continues recording. This does not identify the speaker or guarantee rejection of actual speech leaking from speakers into the microphone.
 
-Run `dist/PurpleParrot.app/Contents/MacOS/Parrot --speech-gate-test "$PWD/dist/PurpleParrot.app/Contents/Resources/portuguese-speech.wav"` to test the real detector against synthetic silence, hiss, DC offset, clicks, Portuguese speech at normal/quiet volume, and state leakage after speech. The fixture was synthesized using the macOS Luciana voice; it contains no meeting audio.
+Run `dist/Parrot.app/Contents/MacOS/Parrot --speech-gate-test "$PWD/dist/Parrot.app/Contents/Resources/portuguese-speech.wav"` to test the real detector against synthetic silence, hiss, DC offset, clicks, Portuguese speech at normal/quiet volume, and state leakage after speech. The fixture was synthesized using the macOS Luciana voice; it contains no meeting audio.

@@ -31,6 +31,6 @@
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 	<key>CFBundleDisplayName</key>
-	<string>Purple Parrot</string>
+	<string>Parrot</string>
 </dict>
 </plist>

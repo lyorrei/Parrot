@@ -1,4 +1,4 @@
-# Purple Parrot — protótipo
+# Parrot — protótipo
 
 Fork com respostas curtas em português e inferência local. Consulte [configuração, mudanças e limitações](docs/PURPLE-FORK.md).
 
