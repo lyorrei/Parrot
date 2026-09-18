@@ -57,7 +57,7 @@ final class KnowledgeBaseService {
         let embed = embedding
         let embedded: [KBChunk] = await Task.detached(priority: .userInitiated) {
             pieces.compactMap { piece in
-                guard let vector = embed(piece, language) else { return nil }
+                let vector = embed(piece, language) ?? []
                 return KBChunk(
                     documentName: name,
                     languageRaw: language.rawValue,
@@ -68,7 +68,7 @@ final class KnowledgeBaseService {
         }.value
 
         guard !embedded.isEmpty else {
-            lastError = "No embeddable text in \(name) — the document language may not be supported on this Mac"
+            lastError = "No readable text chunks in \(name)"
             return
         }
 
@@ -145,13 +145,22 @@ final class KnowledgeBaseService {
                 queryVectors[raw] = embed(query, NLLanguage(rawValue: raw))
             }
 
+            let queryTerms = Self.searchTerms(query)
             let scored: [(KBChunk, Double)] = snapshot.compactMap { chunk in
-                guard let queryVector = queryVectors[chunk.languageRaw] else { return nil }
-                return (chunk, Self.cosineSimilarity(queryVector, chunk.embedding))
+                if let queryVector = queryVectors[chunk.languageRaw], !chunk.embedding.isEmpty {
+                    let score = Self.cosineSimilarity(queryVector, chunk.embedding)
+                    return score > 0.3 ? (chunk, score) : nil
+                }
+                // Some Macs/languages lack Apple's sentence embeddings. Keep
+                // imported account context usable with explicit lexical retrieval.
+                let terms = Self.searchTerms(chunk.text)
+                let matched = queryTerms.intersection(terms).count
+                guard matched > 0 else { return nil }
+                let score = Double(matched) / Double(max(1, queryTerms.count))
+                return (chunk, score)
             }
 
             return scored
-                .filter { $0.1 > 0.3 }
                 .sorted { $0.1 > $1.1 }
                 .prefix(topK)
                 .map(\.0)
@@ -161,6 +170,14 @@ final class KnowledgeBaseService {
             let note = notesByDocument[chunk.documentName]?.nilIfEmpty
             return KBReference(documentName: chunk.documentName, note: note, text: chunk.text)
         }
+    }
+
+    private nonisolated static func searchTerms(_ text: String) -> Set<String> {
+        let ignored: Set<String> = ["que", "com", "para", "uma", "uns", "umas", "por", "dos", "das",
+                                    "como", "qual", "quando", "voce", "voces", "the", "and", "for", "with", "what"]
+        return Set(text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "pt_BR"))
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { $0.count > 2 && !ignored.contains($0) })
     }
 
     // MARK: - Text Extraction & Chunking

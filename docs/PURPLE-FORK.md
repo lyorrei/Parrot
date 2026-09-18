@@ -10,6 +10,7 @@ This fork adds a Portuguese meeting-response profile to Parrot. It is an early p
 - Pause cancels queued/in-flight analysis and preserves pending speech for resume.
 - Failed analysis receives at most two automatic retries when no new speech arrives (five- and ten-second backoffs at Fast pace). New speech starts a fresh retry budget.
 - Echo rejected/retracted from the stored transcript is also excluded/retracted from future live analysis. Previously displayed insights are not retroactively recomputed.
+- If Apple sentence embeddings are unavailable, documents remain searchable through normalized keyword overlap. This fallback is local and does not understand synonyms; semantic retrieval still needs evaluation in Portuguese.
 - Reimporting documents preserves identity, notes and profile assignments.
 - Separate application identity, audio/index folders and Keychain service; upstream automatic updates disabled. Dependencies are locked.
 
