@@ -27,7 +27,7 @@ jobs:
         run: env -u DYLD_FRAMEWORK_PATH dist/PurpleParrot.app/Contents/MacOS/Parrot --profile-test
       - name: Real speech detector regressions
         run: |
-          for fixture in scripts/fixtures/portuguese-*.wav; do
+          for fixture in "$PWD"/dist/PurpleParrot.app/Contents/Resources/portuguese-*.wav; do
             env -u DYLD_FRAMEWORK_PATH dist/PurpleParrot.app/Contents/MacOS/Parrot --speech-gate-test "$fixture"
           done
       - name: Archive verified bundle
