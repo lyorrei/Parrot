@@ -46,9 +46,8 @@ enum CopilotProviderKind: String, CaseIterable, Identifiable {
 
 // MARK: - Ollama model catalog
 
-/// Curated local models for the Settings dropdown — small, non-"thinking"
-/// instruct models only (reasoning models like qwen3/deepseek-r1 spend minutes
-/// on hidden chain-of-thought and time out the live loop; measured 2026-07-17).
+/// Local models exposed in Settings. Ollama requests disable thinking so the
+/// live loop spends its output budget on usable responses.
 enum OllamaCatalog {
     struct Model {
         let id: String
@@ -57,7 +56,9 @@ enum OllamaCatalog {
     }
 
     static let models: [Model] = [
-        Model(id: "llama3.2:3b", label: "llama3.2:3b — fastest, good default", sizeLabel: "2.0 GB"),
+        Model(id: "gemma4:26b", label: "gemma4:26b — 48 GB Mac", sizeLabel: "19 GB"),
+        Model(id: "qwen3.6:35b-a3b", label: "qwen3.6:35b-a3b — 48 GB Mac", sizeLabel: "23 GB"),
+        Model(id: "llama3.2:3b", label: "llama3.2:3b — lightweight fallback", sizeLabel: "2.0 GB"),
         Model(id: "gemma3:4b", label: "gemma3:4b — better writing & languages", sizeLabel: "3.3 GB"),
     ]
 
@@ -298,6 +299,7 @@ final class OpenAICompatibleProvider: AnalysisProvider {
         var body: [String: Any] = [
             "model": config.model,
             "stream": false,
+            "think": false,
             "messages": [
                 ["role": "system", "content": system],
                 ["role": "user", "content": user],
@@ -387,7 +389,13 @@ final class OpenAICompatibleProvider: AnalysisProvider {
         if let key = config.apiKey?.nilIfEmpty {
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        var requestBody = body
+        if kindSource() == .ollama {
+            // Live cards need a direct answer. Thinking models otherwise spend
+            // the latency/output budget on reasoning before returning any JSON.
+            requestBody["reasoning_effort"] = "none"
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
         // ponytail: single retry with fixed backoff on transient failures,
         // mirroring ClaudeAnalysisProvider.

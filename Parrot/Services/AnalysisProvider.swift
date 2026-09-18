@@ -210,6 +210,12 @@ final class ClaudeAnalysisProvider: AnalysisProvider {
             \(list)
             """
         }
+        p += """
+
+        The profile persona's restrictions override these generic defaults for card count,
+        coaching and room assessment. If it asks for no coaching or room assessment, return
+        empty strings for coach and read, and use a neutral score of 50.
+        """
         return p
     }
 

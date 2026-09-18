@@ -4,7 +4,7 @@ This fork adds a Portuguese meeting-response profile to Parrot. It is an early p
 
 ## What changed
 
-- Ollama for live suggestions and reports, local Whisper transcription in Portuguese, cloud polish off by default.
+- Ollama for live suggestions and reports, local Whisper transcription in Portuguese, cloud polish off by default. Thinking is disabled on Ollama requests so the output budget goes to the response. Custom providers retain their own defaults.
 - A new **Purple — resposta rápida** profile: one concise suggested response or clarification, grounded in the call brief and the documents attached to that profile. It does not assume stakeholder names, roles or commitments.
 - Portuguese question triggers, including unpunctuated questions.
 - Pause cancels queued/in-flight analysis and preserves pending speech for resume.
@@ -27,7 +27,7 @@ The binary inside the bundle remains named Parrot. The app bundle is PurpleParro
 
 ## Try it
 
-1. Install/start Ollama and download a model through Settings → Copilot. The inherited default is llama3.2:3b; compare model quality and speed on your Mac before relying on responses.
+1. Install/start Ollama and download a model through Settings → Copilot. The lightweight fallback is llama3.2:3b. On a 48 GB Mac, the catalog also offers gemma4:26b and qwen3.6:35b-a3b. Select the model explicitly after measuring quality and speed on your Mac. Ollama 0.34.2 was used for local checks; update older servers if a model or reasoning_effort=none is unsupported.
 2. Let the app download its local Whisper model and grant the macOS microphone/system-audio permissions.
 3. Select **Purple — resposta rápida**. Add the account context as a TXT/Markdown/PDF in Knowledge and assign it to this profile under Profiles. A duplicated profile per account keeps documents scoped to that account; attach the documents explicitly.
 4. Fill in the call brief with the account and objective. Use the template in `docs/account-brief-template.md`; unknown facts stay unknown.
