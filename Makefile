@@ -10,6 +10,7 @@ CONFIG      ?= release
 DIST        ?= dist
 APP         := $(DIST)/PurpleParrot.app
 PLIST       := $(APP)/Contents/Info.plist
+SIGN_ENTITLEMENTS := $(DIST)/signing.entitlements
 BINDIR      := .build/$(CONFIG)
 VERSION     ?= 0.0.0-dev
 BUILD_NUM   := $(shell date +%Y%m%d%H%M)
@@ -152,8 +153,14 @@ bundle: build
 		"$(APP)/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app" \
 		"$(APP)/Contents/Frameworks/Sparkle.framework"; do \
 		codesign --force --options runtime --timestamp=none --sign "$(SIGN_IDENTITY)" "$$nested" || exit 1; done
+	@# Ad-hoc signatures have no Team ID, so hardened runtime cannot match
+	@# the app to Sparkle even when both were re-signed. Apply the exception
+	@# only to local ad-hoc builds; certificate-signed builds keep validation.
+	@cp Parrot/Parrot.entitlements "$(SIGN_ENTITLEMENTS)"
+	@if [ "$(SIGN_IDENTITY)" = "-" ]; then \
+		/usr/libexec/PlistBuddy -c "Add :com.apple.security.cs.disable-library-validation bool true" "$(SIGN_ENTITLEMENTS)"; fi
 	codesign --force --options runtime --timestamp=none \
-		--entitlements Parrot/Parrot.entitlements \
+		--entitlements "$(SIGN_ENTITLEMENTS)" \
 		--sign "$(SIGN_IDENTITY)" $(APP)
 	@# --deep on verify (not sign) walks nested code and fails loudly if any
 	@# helper was missed — the check that caught this bug in release.sh.

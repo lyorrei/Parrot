@@ -47,3 +47,7 @@ The first command compiles actual production scheduler/retrieval services agains
 ## Next increments
 
 Measure p50/p95 question-end to usable-response latency on the target Mac. Then add a dedicated answer inference path, token budgeting, suggestion expiry, and a premeeting cache with read-only Notion/Linear/Purple Brain sync. No connector credentials or customer data are included in this public repository. Automatic connector synchronization and streaming speaker identification are not implemented in this prototype.
+
+## Local signing
+
+Ad-hoc builds have no Apple Team ID. The Makefile adds the library-validation exception only to the generated signing entitlements for `SIGN_IDENTITY=-`, allowing the bundled Sparkle framework to load. Certificate-signed builds retain library validation. Hardened runtime and the app sandbox remain enabled. CI runs the signed bundle without `DYLD_FRAMEWORK_PATH` before archiving it; checking its signature alone does not prove that it can launch.
